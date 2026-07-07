@@ -1,8 +1,8 @@
 .boards-dashboard, .board-detail-container {
-  padding: 32px 24px;
+  padding: 32px 24px 32px 140px;
   width: 100%;
   max-width: 1200px;
-  margin: 0 auto;
+  margin: 0;
 }
 
 .boards-dashboard-header, .board-detail-header {

@@ -1,0 +1,410 @@
+/* ══════════════════════════════════════
+   STAGGERED MENU  –  Atlas IQ
+══════════════════════════════════════ */
+
+.staggered-menu-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 90;
+  pointer-events: none;
+}
+
+.staggered-menu-wrapper.fixed-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 90;
+  overflow: hidden;
+}
+
+/* Floating Burger Trigger Header */
+.staggered-menu-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* Toggle button floats on the right of its section */
+  padding: 24px 28px;
+  background: transparent;
+  pointer-events: none;
+  z-index: 95;
+}
+
+/* Let the toggle button receive pointer clicks */
+.staggered-menu-header > * {
+  pointer-events: auto;
+}
+
+[data-position='left'] .staggered-menu-header {
+  justify-content: flex-start;
+}
+
+/* Toggle Burger Button */
+.sm-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(11, 14, 20, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 10px 20px;
+  cursor: pointer;
+  color: #ffffff;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 13.5px;
+  line-height: 1;
+  overflow: visible;
+  transition: background 0.25s, border-color 0.25s;
+}
+
+.sm-toggle:hover {
+  background: rgba(11, 14, 20, 0.75);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.sm-toggle:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.4);
+  outline-offset: 4px;
+}
+
+.sm-toggle-textWrap {
+  position: relative;
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 38px;
+}
+
+.sm-toggle-textInner {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.sm-toggle-line {
+  display: block;
+  height: 1em;
+  line-height: 1;
+}
+
+/* Plus / Close Icon Lines */
+.sm-icon {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+}
+
+.sm-icon-line {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+.sm-icon-line-v {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+/* Stagger Layer Sheets */
+.sm-prelayers {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 300px;
+  pointer-events: none;
+  z-index: 85;
+  opacity: 0;
+}
+
+[data-position='right'] .sm-prelayers {
+  left: auto;
+  right: 0;
+}
+
+.sm-prelayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  transform: translateX(0);
+  opacity: 0;
+}
+
+/* Sliding Navigation Panel */
+.staggered-menu-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 300px;
+  height: 100%;
+  background: #0B0E14;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  padding: 40px 22px 22px;
+  overflow-y: auto;
+  z-index: 88;
+  pointer-events: auto;
+  opacity: 0;
+}
+
+[data-position='right'] .staggered-menu-panel {
+  left: auto;
+  right: 0;
+  border-right: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sm-panel-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ── Logo Section ── */
+.sm-panel-logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 30px;
+  margin-bottom: 40px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-compass-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-wordmark {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  color: rgba(255, 255, 255, 0.9);
+  text-transform: uppercase;
+}
+
+/* ── Navigation Links ── */
+.sm-panel-list {
+  list-style: none;
+  margin: 0 0 32px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sm-panel-itemWrap {
+  position: relative;
+  overflow: hidden;
+  line-height: 1;
+}
+
+.sm-panel-item {
+  position: relative;
+  display: block;
+  text-decoration: none;
+  padding: 7px 0;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.25s ease;
+}
+
+.sm-panel-itemLabel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  will-change: transform;
+  transform-origin: 50% 100%;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.28rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+.sm-panel-itemLabel svg {
+  color: rgba(255, 255, 255, 0.35);
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+
+/* Hover & Active States */
+.sm-panel-item:hover {
+  color: #ffffff;
+}
+
+.sm-panel-item:hover svg {
+  color: var(--sm-accent, #14B8A6);
+  transform: scale(1.08);
+}
+
+.sm-panel-item.active {
+  color: #ffffff;
+}
+
+.sm-panel-item.active svg {
+  color: var(--sm-accent, #14B8A6);
+}
+
+/* Numbers on the right of items */
+.sm-panel-list[data-numbering] {
+  counter-reset: smItem;
+}
+
+.sm-panel-list[data-numbering] .sm-panel-item::after {
+  counter-increment: smItem;
+  content: counter(smItem, decimal-leading-zero);
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--sm-accent, #14B8A6);
+  letter-spacing: 0.05em;
+  opacity: var(--sm-num-opacity, 0);
+  transition: opacity 0.3s ease;
+}
+
+/* ── AI Assistant Card Teaser ── */
+.ai-assistant-card {
+  margin-top: auto;
+  border: 1px solid rgba(124, 58, 237, 0.26);
+  background: rgba(124, 58, 237, 0.05);
+  border-radius: 16px;
+  padding: 18px 16px;
+}
+
+.ai-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ai-sparkle {
+  color: #A78BFA;
+}
+
+.ai-card-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.ai-card-body {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.55;
+  margin: 0 0 14px;
+}
+
+.ai-ask-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(124, 58, 237, 0.16);
+  border: 1px solid rgba(124, 58, 237, 0.32);
+  color: #A78BFA;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.ai-ask-btn:hover {
+  background: rgba(124, 58, 237, 0.24);
+}
+
+/* ── User account row ── */
+.sidebar-user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #7C3AED, #14B8A6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.sidebar-username {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+  flex: 1;
+}
+
+.sidebar-pro-badge {
+  background: rgba(124, 58, 237, 0.2);
+  color: #A78BFA;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.sidebar-chevron {
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+}
+
+@media (max-width: 1024px) {
+  .staggered-menu-panel, .sm-prelayers {
+    width: 100%;
+  }
+}

@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Home, Calendar, Bookmark, Heart, Grid3X3,
-  Sparkles, ChevronDown, Compass
+  Sparkles, ChevronDown
 } from 'lucide-react';
 import './Sidebar.css';
 

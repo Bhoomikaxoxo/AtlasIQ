@@ -1,6 +1,6 @@
 .map-view-container {
   display: flex;
-  height: calc(100vh - 70px); /* Adjust height based on app layout navbar */
+  height: 100vh; /* Full screen height since top navbar is removed */
   width: 100%;
   position: relative;
   overflow: hidden;
@@ -16,7 +16,7 @@
 .map-controls-panel {
   position: absolute;
   top: 20px;
-  left: 20px;
+  left: 140px; /* Shifted to avoid overlapping floating menu button */
   width: 300px;
   border-radius: 16px;
   padding: 20px;
