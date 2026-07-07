@@ -1,0 +1,113 @@
+/* Fonts import */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Playfair+Display:ital,wght@0,400;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+/* Component Styles */
+@import "../components/DomeGallery/DomeGallery.css";
+@import "../components/FlowingMenu/FlowingMenu.css";
+@import "../components/ImageTrail/ImageTrail.css";
+@import "../components/ShinyText/ShinyText.css";
+@import "../components/StaggeredMenu/StaggeredMenu.css";
+@import "../components/StarBorder/StarBorder.css";
+@import "../components/Strands/Strands.css";
+@import "../components/ui/BoardPicker.css";
+@import "../components/ui/DetailModal.css";
+@import "../components/ui/PlaceCard.css";
+@import "../components/ui/Sidebar.css";
+
+/* Page Styles */
+@import "./Landing.css";
+@import "./explore/Explore.css";
+@import "./boards/Boards.css";
+@import "./map/MapView.css";
+
+/* Tailwind Core Imports */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* Design System & Global Styles */
+:root {
+  --bg-color: #0B0E14;
+  --bg-card: #12151C;
+  --bg-card-hover: #1A1E27;
+  
+  --color-primary: #14B8A6; /* Teal */
+  --color-secondary: #7C3AED; /* Violet */
+  --color-accent: #F59E0B; /* Amber */
+  
+  --text-primary: #FFFFFF;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  
+  --border-color: #2A2E3A;
+  --border-glow: rgba(20, 184, 166, 0.15);
+  
+  --font-headings: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  
+  --glass-bg: rgba(18, 21, 28, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(16px);
+  --glass-glow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6, .nav-text {
+  font-family: var(--font-headings);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-glow);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-color);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Utility Animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(20, 184, 166, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(20, 184, 166, 0.4);
+  }
+}
+
+.glow-hover:hover {
+  animation: pulse-glow 2s infinite;
+}

@@ -1,0 +1,94 @@
+.star-border-container {
+  display: inline-block;
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.border-gradient-bottom {
+  position: absolute;
+  width: 300%;
+  height: 50%;
+  bottom: -12px;
+  right: -250%;
+  border-radius: 50%;
+  animation: star-movement-bottom linear infinite alternate;
+  z-index: 0;
+  /* Double drop-shadow layers for a brilliant glow */
+  filter: drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 15px var(--color-accent));
+}
+
+.border-gradient-top {
+  position: absolute;
+  width: 300%;
+  height: 50%;
+  top: -12px;
+  left: -250%;
+  border-radius: 50%;
+  animation: star-movement-top linear infinite alternate;
+  z-index: 0;
+  /* Double drop-shadow layers for a brilliant glow */
+  filter: drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 15px var(--color-accent));
+}
+
+.inner-content {
+  position: relative;
+  border: 1px solid #222;
+  background: #000;
+  color: white;
+  font-size: 16px;
+  text-align: center;
+  padding: 16px 26px;
+  border-radius: 20px;
+  z-index: 1;
+}
+
+/* 
+  twinkling keyframes: varying size (scale) and brightness (opacity) 
+  along the path to create a sparkly, glinting star border
+*/
+@keyframes star-movement-bottom {
+  0% {
+    transform: translate(0%, 0%) scale(0.6);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translate(-25%, 0%) scale(1.4);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, 0%) scale(0.5);
+    opacity: 0.2;
+  }
+  75% {
+    transform: translate(-75%, 0%) scale(1.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-100%, 0%) scale(0.6);
+    opacity: 0.3;
+  }
+}
+
+@keyframes star-movement-top {
+  0% {
+    transform: translate(0%, 0%) scale(0.6);
+    opacity: 0.3;
+  }
+  25% {
+    transform: translate(25%, 0%) scale(1.5);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(50%, 0%) scale(0.5);
+    opacity: 0.2;
+  }
+  75% {
+    transform: translate(75%, 0%) scale(1.4);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(100%, 0%) scale(0.6);
+    opacity: 0.3;
+  }
+}

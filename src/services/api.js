@@ -1,6 +1,5 @@
 // Data Fetching and Enrichment API Service for Atlas IQ
-import { getCachedSearchResults, cacheSearchResults } from './store';
-import { seedDestinations } from './seedData';
+import { getCachedSearchResults, cacheSearchResults, getPlaceById, saveEnrichedPlace } from './store';
 
 // Curated Unsplash images for high-aesthetic fallbacks (categorized, expanded for no-repetition)
 const CATEGORY_IMAGES = {
@@ -14,12 +13,7 @@ const CATEGORY_IMAGES = {
     'https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1453614512568-c4024d13c247?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1485182708500-e8f1f318ba72?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1517256064527-09c53b2d0bc6?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1463797900200-539c25d0dec2?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1559925393-8be0ec4767c8?auto=format&fit=crop&w=600&q=80'
+    'https://images.unsplash.com/photo-1485182708500-e8f1f318ba72?auto=format&fit=crop&w=600&q=80'
   ],
   restaurant: [
     'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80',
@@ -31,12 +25,7 @@ const CATEGORY_IMAGES = {
     'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80'
+    'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&w=600&q=80'
   ],
   viewpoint: [
     'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=600&q=80',
@@ -48,12 +37,7 @@ const CATEGORY_IMAGES = {
     'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=600&q=80'
+    'https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=600&q=80'
   ],
   historic: [
     'https://images.unsplash.com/photo-1589330273594-fade1ee91647?auto=format&fit=crop&w=600&q=80',
@@ -65,12 +49,7 @@ const CATEGORY_IMAGES = {
     'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1599874971431-7e8c33e8b09b?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1533854193556-9a2c33eb321e?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1527004013197-933c4bb611b3?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1562240020-ce31ccb0fa7d?auto=format&fit=crop&w=600&q=80'
+    'https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=600&q=80'
   ],
   nature: [
     'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=600&q=80',
@@ -82,12 +61,7 @@ const CATEGORY_IMAGES = {
     'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1434064511983-18c6dae20ed5?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1532274402911-5a369e4c4bb5?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?auto=format&fit=crop&w=600&q=80'
+    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80'
   ],
   attraction: [
     'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=600&q=80',
@@ -99,16 +73,36 @@ const CATEGORY_IMAGES = {
     'https://images.unsplash.com/photo-1513807022359-f104b375975f?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1518391846015-55a9cc003b25?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1531572753726-0fd02d244986?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1508849789987-4e5333c12b78?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1542281286-9e0a16bb7366?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1513584684374-8bab748fbf90?auto=format&fit=crop&w=600&q=80'
+    'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80'
   ]
 };
 
-// Simple deterministic hash to make ratings/reviews/images stick to specific places
+// Curated static cities per country fallback
+const COUNTRY_CITIES = {
+  india: ['Mumbai', 'Delhi', 'Bangalore', 'Kolkata', 'Chennai', 'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Goa', 'Udaipur', 'Kochi', 'Agra', 'Varanasi', 'Amritsar'],
+  usa: ['New York City', 'Los Angeles', 'Chicago', 'San Francisco', 'Miami', 'Seattle', 'Boston', 'Austin', 'Denver', 'Las Vegas', 'New Orleans', 'Honolulu', 'Washington DC', 'San Diego', 'Portland'],
+  'united states': ['New York City', 'Los Angeles', 'Chicago', 'San Francisco', 'Miami', 'Seattle', 'Boston', 'Austin', 'Denver', 'Las Vegas', 'New Orleans', 'Honolulu', 'Washington DC', 'San Diego', 'Portland'],
+  portugal: ['Lisbon', 'Porto', 'Braga', 'Coimbra', 'Faro', 'Funchal', 'Sintra', 'Cascais', 'Lagos', 'Evora'],
+  italy: ['Rome', 'Milan', 'Florence', 'Venice', 'Naples', 'Turin', 'Bologna', 'Palermo', 'Genoa', 'Pisa', 'Siena', 'Verona', 'Amalfi', 'Positano', 'Como'],
+  spain: ['Madrid', 'Barcelona', 'Seville', 'Valencia', 'Malaga', 'Granada', 'Bilbao', 'Ibiza', 'Mallorca', 'San Sebastian', 'Zaragoza', 'Santiago de Compostela'],
+  france: ['Paris', 'Marseille', 'Lyon', 'Toulouse', 'Nice', 'Nantes', 'Strasbourg', 'Montpellier', 'Bordeaux', 'Lille', 'Rennes', 'Reims', 'Cannes', 'Chamonix'],
+  japan: ['Tokyo', 'Osaka', 'Kyoto', 'Yokohama', 'Sapporo', 'Fukuoka', 'Hiroshima', 'Nagoya', 'Nara', 'Okinawa', 'Kobe', 'Kanazawa', 'Hakone'],
+  indonesia: ['Jakarta', 'Canggu', 'Ubud', 'Seminyak', 'Kuta', 'Sanur', 'Nusa Dua', 'Yogyakarta', 'Bandung', 'Surabaya', 'Medan', 'Makassar'],
+  uk: ['London', 'Edinburgh', 'Manchester', 'Birmingham', 'Glasgow', 'Liverpool', 'Bristol', 'Leeds', 'Newcastle', 'Belfast', 'Bath', 'Oxford', 'Cambridge'],
+  'united kingdom': ['London', 'Edinburgh', 'Manchester', 'Birmingham', 'Glasgow', 'Liverpool', 'Bristol', 'Leeds', 'Newcastle', 'Belfast', 'Bath', 'Oxford', 'Cambridge'],
+  germany: ['Berlin', 'Munich', 'Hamburg', 'Frankfurt', 'Cologne', 'Dusseldorf', 'Stuttgart', 'Leipzig', 'Dresden', 'Nuremberg', 'Heidelberg', 'Bremen'],
+  australia: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Gold Coast', 'Cairns', 'Hobart', 'Canberra', 'Darwin'],
+  canada: ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa', 'Edmonton', 'Quebec City', 'Winnipeg', 'Halifax', 'Victoria'],
+  brazil: ['Rio de Janeiro', 'Sao Paulo', 'Salvador', 'Brasilia', 'Fortaleza', 'Belo Horizonte', 'Manaus', 'Curitiba', 'Recife', 'Porto Alegre'],
+  mexico: ['Mexico City', 'Cancun', 'Guadalajara', 'Monterrey', 'Oaxaca', 'Merida', 'Cabo San Lucas', 'Puerto Vallarta', 'Puebla', 'Tulum'],
+  greece: ['Athens', 'Santorini', 'Mykonos', 'Thessaloniki', 'Corfu', 'Rhodes', 'Chania', 'Heraklion', 'Zakynthos', 'Naxos'],
+  thailand: ['Bangkok', 'Phuket', 'Chiang Mai', 'Pattaya', 'Koh Samui', 'Krabi', 'Hua Hin', 'Ayutthaya', 'Chiang Rai', 'Pai'],
+  vietnam: ['Hanoi', 'Ho Chi Minh City', 'Da Nang', 'Hoi An', 'Nha Trang', 'Hue', 'Ha Long Bay', 'Sapa', 'Phu Quoc', 'Da Lat'],
+  philippines: ['Manila', 'Cebu City', 'Boracay', 'El Nido', 'Davao City', 'Baguio', 'Tagaytay', 'Puerto Princesa', 'Siargao', 'Iloilo'],
+  korea: ['Seoul', 'Busan', 'Jeju', 'Incheon', 'Daegu', 'Gyeongju', 'Jeonju', 'Suwon', 'Daejeon', 'Ulsan'],
+  'south korea': ['Seoul', 'Busan', 'Jeju', 'Incheon', 'Daegu', 'Gyeongju', 'Jeonju', 'Suwon', 'Daejeon', 'Ulsan']
+};
+
 const getDeterministicHash = (str) => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -117,17 +111,52 @@ const getDeterministicHash = (str) => {
   return Math.abs(hash);
 };
 
-// Mapping function for raw OpenStreetMap tags to clean categories
+const getDistanceInMeters = (lat1, lon1, lat2, lon2) => {
+  const R = 6371000; // Radius of Earth in meters
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
+
+// String similarity calculator (containment checks + token Jaccard)
+const getStringSimilarity = (str1, str2) => {
+  const s1 = str1.toLowerCase().trim();
+  const s2 = str2.toLowerCase().trim();
+  if (s1 === s2) return 1.0;
+  if (!s1 || !s2) return 0.0;
+
+  // Substring check
+  if (s1.includes(s2) || s2.includes(s1)) {
+    const lenRatio = Math.min(s1.length, s2.length) / Math.max(s1.length, s2.length);
+    if (lenRatio > 0.4) return 0.85;
+  }
+
+  // Token Jaccard Check
+  const words1 = s1.split(/[^a-z0-9]+/);
+  const words2 = s2.split(/[^a-z0-9]+/);
+  const intersection = words1.filter(w => w.length > 2 && words2.includes(w));
+  
+  if (intersection.length > 0) {
+    return intersection.length / Math.min(words1.length, words2.length);
+  }
+  
+  return 0.0;
+};
+
 const getCleanCategory = (tags) => {
-  if (tags.amenity === 'cafe') return 'cafe';
-  if (tags.amenity === 'restaurant' || tags.amenity === 'fast_food' || tags.amenity === 'pub') return 'restaurant';
+  if (tags.amenity === 'cafe' || tags.amenity === 'ice_cream') return 'cafe';
+  if (tags.amenity === 'restaurant' || tags.amenity === 'fast_food' || tags.amenity === 'pub' || tags.amenity === 'bar') return 'restaurant';
   if (tags.tourism === 'viewpoint') return 'viewpoint';
   if (tags.historic || tags.tourism === 'museum') return 'historic';
   if (tags.natural === 'waterfall' || tags.natural === 'peak' || tags.natural === 'beach') return 'nature';
-  return 'attraction'; // Default fallback
+  return 'attraction';
 };
 
-// Formulates the address based on whatever address OSM tags are present
 const getCleanAddress = (tags, fallbackName = 'Unknown Area') => {
   const parts = [];
   if (tags['addr:street']) parts.push(`${tags['addr:housenumber'] || ''} ${tags['addr:street']}`.trim());
@@ -138,13 +167,151 @@ const getCleanAddress = (tags, fallbackName = 'Unknown Area') => {
   return parts.length > 0 ? parts.join(', ') : `Near ${fallbackName}`;
 };
 
+// Fetch real photo of a place from Wikidata (Wikimedia Commons) using its QID
+export const fetchWikidataImage = async (wikidataId) => {
+  if (!wikidataId) return null;
+  try {
+    const url = `https://www.wikidata.org/w/api.php?action=wbgetclaims&entity=${encodeURIComponent(wikidataId)}&property=P18&format=json&origin=*`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const claim = data.claims && data.claims.P18 && data.claims.P18[0];
+    const filename = claim && claim.mainsnak && claim.mainsnak.datavalue && claim.mainsnak.datavalue.value;
+    if (filename) {
+      return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=800`;
+    }
+    return null;
+  } catch (err) {
+    console.error(`Error fetching Wikidata image for ${wikidataId}:`, err);
+    return null;
+  }
+};
+
+// Mapillary coordinate-only image lookup
+export const fetchMapillaryImage = async (lat, lng) => {
+  const token = import.meta.env.VITE_MAPILLARY_ACCESS_TOKEN || '';
+  if (!token) return null;
+
+  try {
+    const delta = 0.0005;
+    const bbox = `${lng - delta},${lat - delta},${lng + delta},${lat + delta}`;
+    const url = `https://graph.mapillary.com/images?access_token=${token}&fields=id,thumb_1024_url&bbox=${bbox}&limit=1`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const img = data.data && data.data[0];
+    if (img && img.thumb_1024_url) {
+      return img.thumb_1024_url;
+    }
+    return null;
+  } catch (err) {
+    console.error('Error fetching Mapillary image:', err);
+    return null;
+  }
+};
+
+// Foursquare Places API lookup with strict validation
+export const enrichPlaceWithFoursquare = async (name, lat, lng) => {
+  const key = import.meta.env.VITE_FOURSQUARE_API_KEY || '';
+  if (!key) return null;
+
+  try {
+    const searchUrl = `https://api.foursquare.com/v3/places/search?ll=${lat},${lng}&query=${encodeURIComponent(name)}&radius=100&limit=1`;
+    const res = await fetch(searchUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': key
+      }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const venue = data.results && data.results[0];
+    if (!venue) return null;
+
+    const distance = getDistanceInMeters(lat, lng, venue.geocodes.main.latitude, venue.geocodes.main.longitude);
+    const similarity = getStringSimilarity(name, venue.name);
+
+    if (distance > 100 || similarity < 0.6) {
+      return null;
+    }
+
+    const photoUrl = `https://api.foursquare.com/v3/places/${venue.fsq_id}/photos?limit=1`;
+    const photoRes = await fetch(photoUrl, {
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': key
+      }
+    });
+    if (!photoRes.ok) return null;
+    const photos = await photoRes.json();
+    const photo = photos && photos[0];
+    if (photo) {
+      return {
+        photoUrl: `${photo.prefix}800x600${photo.suffix}`,
+        distanceMeters: distance,
+        nameSimilarity: similarity,
+        rating: venue.rating ? venue.rating / 2.0 : null,
+        userRatingsTotal: venue.stats?.ratings_count || null
+      };
+    }
+    return null;
+  } catch (err) {
+    console.error('Error fetching Foursquare photo:', err);
+    return null;
+  }
+};
+
+// Fetch cities in country from Nominatim
+async function getCitiesForCountry(countryQuery, limit = 20) {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(countryQuery)}&format=json&featuretype=city&limit=${limit}`,
+      { headers: { 'User-Agent': 'AtlasIQ/1.0 (contact@yourdomain.com)' } }
+    );
+    if (!res.ok) return [];
+    return await res.json();
+  } catch {
+    return [];
+  }
+}
+
+// Nominatim Reverse Geocoding API
+export const reverseGeocode = async (lat, lng) => {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+    const res = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'AtlasIQ/1.0 (contact@yourdomain.com)'
+      }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data && data.address) {
+      const addr = data.address;
+      const parts = [];
+      if (addr.road) parts.push(addr.road);
+      if (addr.suburb || addr.neighbourhood || addr.village || addr.town) {
+        parts.push(addr.suburb || addr.neighbourhood || addr.village || addr.town);
+      }
+      if (addr.city || addr.county) parts.push(addr.city || addr.county);
+      if (addr.state) parts.push(addr.state);
+      return parts.join(', ');
+    }
+    return data.display_name || null;
+  } catch (err) {
+    console.error('Error in reverse geocoding:', err);
+    return null;
+  }
+};
+
 // Nominatim Geocoding API
 export const geocodePlace = async (query) => {
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
   const response = await fetch(url, {
     headers: {
       'Accept': 'application/json',
-      'User-Agent': 'AtlasIQTravelApp/1.0'
+      'User-Agent': 'AtlasIQ/1.0 (contact@yourdomain.com)'
     }
   });
   if (!response.ok) throw new Error('Geocoding service unavailable');
@@ -168,13 +335,11 @@ export const geocodePlace = async (query) => {
   };
 };
 
-// Overpass API discover spots within bounding box
+// Overpass API discover spots within bounding box (supports way and relation center resolutions)
 export const fetchSpotsFromOverpass = async (bbox, centerLat, centerLng) => {
-  // Bounding box validation and clamping for country level queries
-  // If bbox is too wide, we constrain it to 0.15 degrees (~15-20km) around center
   let latMin = bbox.latMin;
   let latMax = bbox.latMax;
-  let lngMin = bbox.boundingBox ? bbox.lngMin : bbox.lngMin; // safety checks
+  let lngMin = bbox.lngMin;
   let lngMax = bbox.lngMax;
   
   const latDelta = Math.abs(latMax - latMin);
@@ -188,25 +353,21 @@ export const fetchSpotsFromOverpass = async (bbox, centerLat, centerLng) => {
     lngMax = centerLng + 0.12;
   }
 
-  const query = `
-    [out:json][timeout:25];
-    (
-      node["amenity"="cafe"](${latMin},${lngMin},${latMax},${lngMax});
-      node["amenity"="restaurant"](${latMin},${lngMin},${latMax},${lngMax});
-      node["tourism"="viewpoint"](${latMin},${lngMin},${latMax},${lngMax});
-      node["tourism"="attraction"](${latMin},${lngMin},${latMax},${lngMax});
-      node["historic"](${latMin},${lngMin},${latMax},${lngMax});
-      node["natural"="waterfall"](${latMin},${lngMin},${latMax},${lngMax});
-      node["natural"="peak"](${latMin},${lngMin},${latMax},${lngMax});
-      node["tourism"="museum"](${latMin},${lngMin},${latMax},${lngMax});
-    );
-    out body 40;
-  `;
+  const query = `[out:json][timeout:25];
+(
+  nwr["amenity"~"cafe|restaurant|bar|fast_food|ice_cream"](${latMin},${lngMin},${latMax},${lngMax});
+  nwr["tourism"~"attraction|viewpoint|museum|gallery|artwork|zoo|hotel|theme_park"](${latMin},${lngMin},${latMax},${lngMax});
+  nwr["historic"](${latMin},${lngMin},${latMax},${lngMax});
+  nwr["natural"~"waterfall|peak|beach|cave_entrance"](${latMin},${lngMin},${latMax},${lngMax});
+  nwr["leisure"~"park|garden|nature_reserve"](${latMin},${lngMin},${latMax},${lngMax});
+  nwr["shop"~"bakery|art|gift"](${latMin},${lngMin},${latMax},${lngMax});
+);
+out center;`;
   
   const url = 'https://overpass-api.de/api/interpreter';
   const response = await fetch(url, {
     method: 'POST',
-    body: query,
+    body: `data=${encodeURIComponent(query)}`,
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded'
     }
@@ -215,70 +376,327 @@ export const fetchSpotsFromOverpass = async (bbox, centerLat, centerLng) => {
   if (!response.ok) throw new Error('Overpass OSM query failed');
   
   const data = await response.json();
-  return data.elements || [];
+  const elements = data.elements || [];
+
+  // Parse coords correctly for way/relation elements that return center coordinates
+  const parsedElements = elements.map(el => ({
+    ...el,
+    lat: el.lat || (el.center && el.center.lat),
+    lon: el.lon || (el.center && el.center.lon)
+  })).filter(el => el.lat != null && el.lon != null);
+
+  return {
+    elements: parsedElements,
+    queryStr: query
+  };
 };
 
-// Main search pipeline connecting Nominatim + Overpass + Enrichment Fallback
-export const searchDestination = async (query) => {
-  const cached = getCachedSearchResults(query);
-  if (cached) return cached;
+// Google Places Nearby Search with strict matching constraints
+export const enrichPlaceWithGoogle = async (name, lat, lng) => {
+  const key = import.meta.env.VITE_GOOGLE_PLACES_API_KEY || '';
+  if (!key) return null;
 
+  try {
+    const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&rankby=distance&keyword=${encodeURIComponent(name)}&key=${key}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.status !== 'OK' || !data.results || data.results.length === 0) return null;
+
+    const candidate = data.results[0];
+    
+    // Compute distance and name similarity
+    const candidateLat = candidate.geometry.location.lat;
+    const candidateLng = candidate.geometry.location.lng;
+    const distanceMeters = getDistanceInMeters(lat, lng, candidateLat, candidateLng);
+    const nameSimilarity = getStringSimilarity(name, candidate.name);
+
+    // Strict validation
+    if (distanceMeters > 100 || nameSimilarity < 0.6) {
+      console.warn(`[Google Places Filtered] "${name}" matched nearby "${candidate.name}" but failed strict threshold (dist: ${Math.round(distanceMeters)}m, sim: ${nameSimilarity.toFixed(2)})`);
+      return null;
+    }
+
+    const photoRef = candidate.photos && candidate.photos[0] ? candidate.photos[0].photo_reference : null;
+    const photoUrl = photoRef 
+      ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photoRef}&key=${key}`
+      : null;
+
+    return {
+      rating: candidate.rating || null,
+      userRatingsTotal: candidate.user_ratings_total || null,
+      priceLevel: candidate.price_level || 1,
+      photoUrl,
+      distanceMeters,
+      nameSimilarity
+    };
+  } catch (err) {
+    console.error('Error enriching place with Google:', err);
+    return null;
+  }
+};
+
+// Main search pipeline with pagination and lazy enrichment
+export const searchDestination = async (query, page = 1, pageSize = 40) => {
   const normQuery = query.toLowerCase().trim();
-  const matchedKey = Object.keys(seedDestinations).find(key => normQuery.includes(key));
-  if (matchedKey) {
-    const seeded = seedDestinations[matchedKey];
-    cacheSearchResults(query, seeded);
-    return seeded;
+  const cachedData = getCachedSearchResults(query);
+
+  let location;
+  let rawNodes = [];
+  let debugInfo = null;
+
+  if (cachedData && cachedData.rawNodes) {
+    location = cachedData.location;
+    rawNodes = cachedData.rawNodes;
+    debugInfo = cachedData.debugInfo || null;
+  } else {
+    // 1. Geocode
+    try {
+      location = await geocodePlace(query);
+    } catch {
+      throw new Error('Destination not found');
+    }
+
+    const latDelta = Math.abs(location.boundingBox.latMax - location.boundingBox.latMin);
+    const lngDelta = Math.abs(location.boundingBox.lngMax - location.boundingBox.lngMin);
+    const sourcePlaceName = location.displayName.split(',')[0];
+
+    let citiesQueriedList = [];
+    let overpassQueryStr = '';
+
+    // 2. Query OSM places: handle country-sized searches by query splitting
+    if (latDelta > 2.0 || lngDelta > 2.0) {
+      const citiesData = await getCitiesForCountry(query, 15);
+      let citiesToQuery = citiesData.map(c => c.display_name.split(',')[0]);
+
+      if (citiesToQuery.length === 0) {
+        const matchedCountry = Object.keys(COUNTRY_CITIES).find(c => normQuery.includes(c));
+        citiesToQuery = matchedCountry ? COUNTRY_CITIES[matchedCountry] : [];
+      }
+
+      if (citiesToQuery.length > 0) {
+        citiesQueriedList = citiesToQuery;
+        const promises = citiesToQuery.map(async (city) => {
+          try {
+            const cityLoc = await geocodePlace(`${city}, ${query}`);
+            const result = await fetchSpotsFromOverpass(cityLoc.boundingBox, cityLoc.lat, cityLoc.lng);
+            if (!overpassQueryStr) overpassQueryStr = result.queryStr;
+            return result.elements.map(node => ({ ...node, cityName: city }));
+          } catch (err) {
+            console.error(`Failed to fetch spots for city ${city}:`, err);
+            return [];
+          }
+        });
+        const results = await Promise.all(promises);
+        rawNodes = results.flat();
+      } else {
+        try {
+          const capitalLoc = await geocodePlace(`Capital of ${query}`);
+          citiesQueriedList = [`Capital: ${capitalLoc.displayName.split(',')[0]}`];
+          const result = await fetchSpotsFromOverpass(capitalLoc.boundingBox, capitalLoc.lat, capitalLoc.lng);
+          rawNodes = result.elements;
+          overpassQueryStr = result.queryStr;
+        } catch {
+          citiesQueriedList = ['Country Center'];
+          const result = await fetchSpotsFromOverpass(location.boundingBox, location.lat, location.lng);
+          rawNodes = result.elements;
+          overpassQueryStr = result.queryStr;
+        }
+      }
+    } else {
+      citiesQueriedList = [sourcePlaceName];
+      const result = await fetchSpotsFromOverpass(location.boundingBox, location.lat, location.lng);
+      rawNodes = result.elements;
+      overpassQueryStr = result.queryStr;
+    }
+
+    // 3. Quality scoring, Deduplication & Pre-sorting
+    const validNodes = rawNodes.filter(node => node.tags && node.tags.name);
+    
+    const getQualityScore = (node) => {
+      let score = 0;
+      if (node.tags) {
+        score += Object.keys(node.tags).length;
+        if (node.tags.website) score += 2;
+        if (node.tags.opening_hours) score += 1;
+        if (node.tags.phone) score += 1;
+        if (node.tags.description) score += 3;
+      }
+      return score;
+    };
+
+    // Deduplicate by name + proximity (< 50m)
+    const uniqueNodes = [];
+    for (const node of validNodes) {
+      const isDuplicate = uniqueNodes.some(existing => {
+        if (existing.tags.name.toLowerCase().trim() === node.tags.name.toLowerCase().trim()) {
+          const dist = getDistanceInMeters(existing.lat, existing.lon, node.lat, node.lon);
+          return dist < 50;
+        }
+        return false;
+      });
+      if (!isDuplicate) {
+        uniqueNodes.push(node);
+      }
+    }
+
+    uniqueNodes.sort((a, b) => getQualityScore(b) - getQualityScore(a));
+
+    debugInfo = {
+      citiesQueried: citiesQueriedList,
+      rawOsmCount: validNodes.length,
+      dedupedOsmCount: uniqueNodes.length,
+      overpassQuery: overpassQueryStr
+    };
+
+    cacheSearchResults(query, { location, rawNodes: uniqueNodes, debugInfo });
+    rawNodes = uniqueNodes;
   }
 
-  // 1. Geocode
-  const location = await geocodePlace(query);
-  
-  // 2. Discover raw OSM nodes
-  const rawNodes = await fetchSpotsFromOverpass(location.boundingBox, location.lat, location.lng);
-  
-  // 3. Clean and enrich spots
-  const spots = rawNodes
-    .filter(node => node.tags && node.tags.name) // must have a name
-    .map((node, idx) => {
-      const hash = getDeterministicHash(node.id.toString());
-      const category = getCleanCategory(node.tags);
-      
-      // Deterministic ratings between 4.1 and 4.9
-      const rating = (4.1 + (hash % 9) * 0.1).toFixed(1);
-      // Deterministic user reviews count
-      const userRatingsTotal = 12 + (hash % 1800);
-      // Hidden gem threshold
-      const isHidden = userRatingsTotal < 120;
-      // Deterministic price level (1 to 4)
-      const priceLevel = 1 + (hash % 3); // 1 to 3 dollar signs
-      
-      // Curated image selection: Shuffle index using hash + array position to ensure ZERO repetitions
+  // 4. Paginate
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const pageNodes = rawNodes.slice(startIndex, endIndex);
+  const sourcePlaceName = location.displayName.split(',')[0];
+
+  // 5. Enrich current page (progressive lazy pipeline)
+  const spotsPromises = pageNodes.map(async (node, idx) => {
+    const placeId = node.id.toString();
+
+    const cachedEnriched = getPlaceById(placeId);
+    if (cachedEnriched) return cachedEnriched;
+
+    const hash = getDeterministicHash(placeId);
+    const category = getCleanCategory(node.tags);
+    
+    let rating = null;
+    let userRatingsTotal = null;
+    let priceLevel = 1;
+    let photoUrl = null;
+    let photoSource = 'generic';
+    let matchDistance = null;
+    let nameSimilarity = null;
+
+    // Priority 1: Wikidata P18 image
+    if (node.tags && node.tags.wikidata) {
+      const wikiPhoto = await fetchWikidataImage(node.tags.wikidata);
+      if (wikiPhoto) {
+        photoUrl = wikiPhoto;
+        photoSource = 'wikidata';
+        matchDistance = 0;
+        nameSimilarity = 1.0;
+      }
+    }
+
+    // Priority 2: Google Places (Nearby Search with strict filters)
+    if (!photoUrl) {
+      const googleData = await enrichPlaceWithGoogle(node.tags.name, node.lat, node.lon);
+      if (googleData) {
+        rating = googleData.rating;
+        userRatingsTotal = googleData.userRatingsTotal;
+        priceLevel = googleData.priceLevel;
+        photoUrl = googleData.photoUrl;
+        if (photoUrl) {
+          photoSource = 'google';
+          matchDistance = googleData.distanceMeters;
+          nameSimilarity = googleData.nameSimilarity;
+        }
+      }
+    }
+
+    // Priority 3: Foursquare lookup
+    if (!photoUrl) {
+      const fsqData = await enrichPlaceWithFoursquare(node.tags.name, node.lat, node.lon);
+      if (fsqData) {
+        rating = fsqData.rating;
+        userRatingsTotal = fsqData.userRatingsTotal;
+        photoUrl = fsqData.photoUrl;
+        photoSource = 'foursquare';
+        matchDistance = fsqData.distanceMeters;
+        nameSimilarity = fsqData.nameSimilarity;
+      }
+    }
+
+    // Priority 4: Mapillary coordinate image
+    if (!photoUrl) {
+      const mapillaryPhoto = await fetchMapillaryImage(node.lat, node.lon);
+      if (mapillaryPhoto) {
+        photoUrl = mapillaryPhoto;
+        photoSource = 'mapillary';
+        matchDistance = 0;
+        nameSimilarity = 1.0;
+      }
+    }
+
+    // Priority 5: Generic stock fallback
+    if (!photoUrl) {
       const images = CATEGORY_IMAGES[category] || CATEGORY_IMAGES.attraction;
       const imageIndex = (hash + idx) % images.length;
-      const photoUrl = images[imageIndex];
-      
-      return {
-        id: node.id.toString(),
-        name: node.tags.name,
-        category: category,
-        lat: node.lat,
-        lng: node.lon,
-        address: getCleanAddress(node.tags, location.displayName.split(',')[0]),
-        rating: parseFloat(rating),
-        userRatingsTotal,
-        priceLevel,
-        photoUrl,
-        isHidden,
-        sourcePlace: location.displayName.split(',')[0].trim()
-      };
-    });
-  
-  const result = {
+      photoUrl = images[imageIndex];
+      photoSource = 'generic';
+    }
+
+    // Classification
+    const HIDDEN_GEM_THRESHOLD = 50;
+    let classification = 'unrated';
+    if (userRatingsTotal != null) {
+      classification = userRatingsTotal < HIDDEN_GEM_THRESHOLD ? 'hidden' : 'popular';
+    }
+    const isHidden = classification === 'hidden';
+
+    let address = getCleanAddress(node.tags, node.cityName || sourcePlaceName);
+    if (!googleData) {
+      const revGeo = await reverseGeocode(node.lat, node.lon);
+      if (revGeo) {
+        address = revGeo;
+      }
+    }
+
+    const enrichedPlace = {
+      id: placeId,
+      name: node.tags.name,
+      category,
+      lat: node.lat,
+      lng: node.lon,
+      address,
+      rating,
+      userRatingsTotal,
+      priceLevel,
+      photoUrl,
+      photoSource,
+      photoIsGeneric: photoSource === 'generic',
+      matchDistance,
+      nameSimilarity,
+      classification,
+      isHidden,
+      sourcePlace: node.cityName || sourcePlaceName
+    };
+
+    saveEnrichedPlace(enrichedPlace);
+    return enrichedPlace;
+  });
+
+  const spots = await Promise.all(spotsPromises);
+
+  // Surface dev-only console summary logs
+  const googleCount = spots.filter(s => s.photoSource === 'google').length;
+  const wikiCount = spots.filter(s => s.photoSource === 'wikidata').length;
+  const fsqCount = spots.filter(s => s.photoSource === 'foursquare').length;
+  const mapillaryCount = spots.filter(s => s.photoSource === 'mapillary').length;
+  const genericCount = spots.filter(s => s.photoSource === 'generic').length;
+  console.warn(`[AtlasIQ Enrichment Summary] Page ${page}: ${googleCount} Google Places, ${wikiCount} Wikidata, ${fsqCount} Foursquare, ${mapillaryCount} Mapillary, ${genericCount} Generic fallbacks`);
+
+  return {
+    spots,
+    hasMore: endIndex < rawNodes.length,
     location,
-    spots
+    debugInfo: {
+      ...debugInfo,
+      googleCount,
+      wikiCount,
+      fsqCount,
+      mapillaryCount,
+      genericCount
+    }
   };
-  
-  cacheSearchResults(query, result);
-  return result;
 };

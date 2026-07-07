@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { isPinnedToMap, pinToMap, unpinFromMap } from '../../services/store';
+'use client';
+
+import React, { useState } from 'react';
+import { useTravelStore } from '../../lib/store/useTravelStore';
 import BoardPicker from './BoardPicker';
 import { Star, MapPin, DollarSign, X, Coffee, Utensils, Mountain, Compass, Trees } from 'lucide-react';
-import './DetailModal.css';
 
 function CategoryIcon({ category, size = 24 }) {
   switch (category) {
@@ -22,24 +23,18 @@ function CategoryIcon({ category, size = 24 }) {
 }
 
 function DetailModal({ place, onClose }) {
-  const [pinnedToMap, setPinnedToMap] = useState(false);
+  const pinToMap = useTravelStore((state) => state.pinToMap);
+  const unpinFromMap = useTravelStore((state) => state.unpinFromMap);
+  const pinnedToMap = useTravelStore((state) => state.mapPins.includes(place?.id || ''));
   const [showBoardPicker, setShowBoardPicker] = useState(false);
-
-  useEffect(() => {
-    if (place) {
-      setPinnedToMap(isPinnedToMap(place.id));
-    }
-  }, [place]);
 
   if (!place) return null;
 
   const handleMapPinToggle = () => {
     if (pinnedToMap) {
       unpinFromMap(place.id);
-      setPinnedToMap(false);
     } else {
       pinToMap(place);
-      setPinnedToMap(true);
     }
   };
 
@@ -69,7 +64,7 @@ function DetailModal({ place, onClose }) {
         )}
 
         {/* Dev-only debug metadata overlay in modal */}
-        {import.meta.env.DEV && (
+        {process.env.NODE_ENV === 'development' && (
           <div className="debug-tag modal-debug-tag">
             source: {place.photoSource} 
             {place.matchDistance != null ? ` · dist:${Math.round(place.matchDistance)}m` : ''}

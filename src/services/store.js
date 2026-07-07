@@ -8,7 +8,7 @@ const STORAGE_KEYS = {
 };
 
 // Cache-busting version check
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CURRENT_VERSION = localStorage.getItem('atlas_iq_cache_version');
 if (CURRENT_VERSION !== CACHE_VERSION) {
   localStorage.removeItem(STORAGE_KEYS.SEARCH_CACHE);

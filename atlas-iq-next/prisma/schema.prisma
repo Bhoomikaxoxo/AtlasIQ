@@ -1,0 +1,60 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Destination {
+  id          String   @id @default(cuid())
+  query       String   @unique
+  displayName String
+  boundingBox String   // Comma-separated or serialized coordinates
+  lat         Float
+  lng         Float
+  fetchedAt   DateTime @default(now()) @updatedAt
+  places      Place[]  @relation("DestinationPlaces")
+}
+
+model Place {
+  id               String        @id // OSM Node ID
+  name             String
+  category         String
+  lat              Float
+  lng              Float
+  address          String
+  rating           Float?
+  userRatingsTotal Int?
+  priceLevel       Int?
+  photoUrl         String
+  photoSource      String
+  photoIsGeneric   Boolean
+  matchDistance    Float?
+  nameSimilarity   Float?
+  classification   String
+  isHidden         Boolean
+  sourcePlace      String
+  qualityScore     Int           @default(0)
+  isEnriched       Boolean       @default(false)
+  tags             Json?
+  
+  destinations     Destination[] @relation("DestinationPlaces")
+  boards           Board[]       @relation("BoardPlaces")
+  mapPins          MapPin[]
+}
+
+model Board {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  places      Place[]  @relation("BoardPlaces")
+  createdAt   DateTime @default(now())
+}
+
+model MapPin {
+  id       String   @id @default(cuid())
+  placeId  String   @unique
+  place    Place    @relation(fields: [placeId], references: [id], onDelete: Cascade)
+  pinnedAt DateTime @default(now())
+}
