@@ -25,6 +25,8 @@ import {
 
 const CACHE_EXPIRY_DAYS = 7;
 
+const MAPILLARY_SUITABLE_CATEGORIES = new Set(['viewpoint', 'nature', 'historic', 'attraction']);
+
 const CATEGORY_IMAGES: Record<string, string[]> = {
   cafe: [
     'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=600&q=80',
@@ -396,8 +398,8 @@ export const getPaginatedSpots = async (query: string, page = 1, pageSize = 40) 
         }
       }
 
-      // Priority 5: Mapillary coordinate image
-      if (!photoUrl) {
+      // Priority 5: Mapillary coordinate image (only for suitable outdoor categories)
+      if (!photoUrl && MAPILLARY_SUITABLE_CATEGORIES.has(category)) {
         const mapillaryPhoto = await fetchMapillaryImage(place.lat, place.lng);
         if (mapillaryPhoto) {
           photoUrl = mapillaryPhoto;

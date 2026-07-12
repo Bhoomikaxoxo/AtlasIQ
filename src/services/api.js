@@ -1,6 +1,8 @@
 // Data Fetching and Enrichment API Service for Atlas IQ
 import { getCachedSearchResults, cacheSearchResults, getPlaceById, saveEnrichedPlace } from './store';
 
+const MAPILLARY_SUITABLE_CATEGORIES = new Set(['viewpoint', 'nature', 'historic', 'attraction']);
+
 // Curated Unsplash images for high-aesthetic fallbacks (categorized, expanded for no-repetition)
 const CATEGORY_IMAGES = {
   cafe: [
@@ -727,8 +729,8 @@ export const searchDestination = async (query, page = 1, pageSize = 40) => {
       }
     }
 
-    // Priority 5: Mapillary coordinate image
-    if (!photoUrl) {
+    // Priority 5: Mapillary coordinate image (only for suitable outdoor categories)
+    if (!photoUrl && MAPILLARY_SUITABLE_CATEGORIES.has(category)) {
       const mapillaryPhoto = await fetchMapillaryImage(node.lat, node.lon);
       if (mapillaryPhoto) {
         photoUrl = mapillaryPhoto;
