@@ -115,6 +115,17 @@ export const getStringSimilarity = (str1: string, str2: string): number => {
   return 0.0;
 };
 
+export const getMatchConfidence = (distanceMeters: number, nameSimilarity: number): number => {
+  // Distance score: 1.0 at 0m, decaying linearly to 0 at 100m
+  const distanceScore = Math.max(0, 1 - distanceMeters / 100);
+  // Weight distance more heavily than name similarity —
+  // proximity is more reliable than string matching for informal OSM names
+  return distanceScore * 0.6 + nameSimilarity * 0.4;
+};
+
+// Minimum confidence to accept a candidate as a real match
+export const MATCH_CONFIDENCE_THRESHOLD = 0.45;
+
 export const getCleanCategory = (tags?: Record<string, string | undefined>): string => {
   if (!tags) return 'attraction';
   if (tags.amenity === 'cafe' || tags.amenity === 'ice_cream') return 'cafe';
@@ -307,6 +318,28 @@ export const fetchWikidataImage = async (wikidataId?: string): Promise<string | 
   }
 };
 
+// Fetch image from Wikimedia Commons using text search
+export const fetchWikimediaCommonsImage = async (name: string): Promise<string | null> => {
+  try {
+    const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=filetype:bitmap%20${encodeURIComponent(name)}&gsrlimit=1&gsrnamespace=6&prop=imageinfo&iiprop=url&format=json&origin=*`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const pages = data.query?.pages;
+    if (!pages) return null;
+    
+    const pageId = Object.keys(pages)[0];
+    const imageInfo = pages[pageId]?.imageinfo?.[0];
+    if (imageInfo?.url) {
+      return imageInfo.url;
+    }
+    return null;
+  } catch (err) {
+    console.error(`Error in Wikimedia Commons search for "${name}":`, err);
+    return null;
+  }
+};
+
 // Mapillary image lookup
 export const fetchMapillaryImage = async (lat: number, lng: number): Promise<string | null> => {
   const token = process.env.MAPILLARY_ACCESS_TOKEN || '';
@@ -340,7 +373,7 @@ export const enrichPlaceWithFoursquare = async (
   if (!key) return null;
 
   try {
-    const searchUrl = `https://api.foursquare.com/v3/places/search?ll=${lat},${lng}&query=${encodeURIComponent(name)}&radius=100&limit=1`;
+    const searchUrl = `https://api.foursquare.com/v3/places/search?ll=${lat},${lng}&query=${encodeURIComponent(name)}&radius=150&limit=5`;
     const res = await fetch(searchUrl, {
       headers: {
         'Accept': 'application/json',
@@ -349,17 +382,30 @@ export const enrichPlaceWithFoursquare = async (
     });
     if (!res.ok) return null;
     const data = await res.json();
-    const venue = data.results && data.results[0];
-    if (!venue) return null;
+    const venues = data.results || [];
+    if (venues.length === 0) return null;
 
-    const distance = getDistanceInMeters(lat, lng, venue.geocodes.main.latitude, venue.geocodes.main.longitude);
-    const similarity = getStringSimilarity(name, venue.name);
+    // Score all candidates, keep the best
+    const scored = venues.map((venue: any) => {
+      const distance = getDistanceInMeters(lat, lng, venue.geocodes.main.latitude, venue.geocodes.main.longitude);
+      const similarity = getStringSimilarity(name, venue.name);
+      const confidence = getMatchConfidence(distance, similarity);
+      return { venue, distance, similarity, confidence };
+    });
 
-    if (distance > 100 || similarity < 0.6) {
+    scored.sort((a: any, b: any) => b.confidence - a.confidence);
+    const best = scored[0];
+
+    console.warn(
+      `[Foursquare Match] "${name}" -> "${best.venue.name}" ` +
+      `(dist: ${Math.round(best.distance)}m, sim: ${best.similarity.toFixed(2)}, confidence: ${best.confidence.toFixed(2)})`
+    );
+
+    if (best.confidence < MATCH_CONFIDENCE_THRESHOLD) {
       return null;
     }
 
-    const photoUrl = `https://api.foursquare.com/v3/places/${venue.fsq_id}/photos?limit=1`;
+    const photoUrl = `https://api.foursquare.com/v3/places/${best.venue.fsq_id}/photos?limit=1`;
     const photoRes = await fetch(photoUrl, {
       headers: {
         'Accept': 'application/json',
@@ -372,10 +418,10 @@ export const enrichPlaceWithFoursquare = async (
     if (photo) {
       return {
         photoUrl: `${photo.prefix}800x600${photo.suffix}`,
-        distanceMeters: distance,
-        nameSimilarity: similarity,
-        rating: venue.rating ? venue.rating / 2.0 : null,
-        userRatingsTotal: venue.stats?.ratings_count || null,
+        distanceMeters: best.distance,
+        nameSimilarity: best.similarity,
+        rating: best.venue.rating ? best.venue.rating / 2.0 : null,
+        userRatingsTotal: best.venue.stats?.ratings_count || null,
         priceLevel: null
       };
     }
@@ -402,31 +448,43 @@ export const enrichPlaceWithGoogle = async (
     const data = await res.json();
     if (data.status !== 'OK' || !data.results || data.results.length === 0) return null;
 
-    const candidate = data.results[0];
-    const candidateLat = candidate.geometry.location.lat;
-    const candidateLng = candidate.geometry.location.lng;
-    const distanceMeters = getDistanceInMeters(lat, lng, candidateLat, candidateLng);
-    const nameSimilarity = getStringSimilarity(name, candidate.name);
+    // Score top 5 candidates, keep the best
+    const candidates = data.results.slice(0, 5);
+    const scored = candidates.map((candidate: any) => {
+      const candidateLat = candidate.geometry.location.lat;
+      const candidateLng = candidate.geometry.location.lng;
+      const distanceMeters = getDistanceInMeters(lat, lng, candidateLat, candidateLng);
+      const nameSimilarity = getStringSimilarity(name, candidate.name);
+      const confidence = getMatchConfidence(distanceMeters, nameSimilarity);
+      return { candidate, distanceMeters, nameSimilarity, confidence };
+    });
 
-    if (distanceMeters > 100 || nameSimilarity < 0.6) {
-      console.warn(
-        `[Google Places Filtered] "${name}" matched nearby "${candidate.name}" but failed strict threshold (dist: ${Math.round(distanceMeters)}m, sim: ${nameSimilarity.toFixed(2)})`
-      );
+    scored.sort((a: any, b: any) => b.confidence - a.confidence);
+    const best = scored[0];
+
+    console.warn(
+      `[Google Places Match] "${name}" -> "${best.candidate.name}" ` +
+      `(dist: ${Math.round(best.distanceMeters)}m, sim: ${best.nameSimilarity.toFixed(2)}, confidence: ${best.confidence.toFixed(2)})`
+    );
+
+    if (best.confidence < MATCH_CONFIDENCE_THRESHOLD) {
       return null;
     }
 
-    const photoRef = candidate.photos && candidate.photos[0] ? candidate.photos[0].photo_reference : null;
+    const photoRef = best.candidate.photos && best.candidate.photos[0]
+      ? best.candidate.photos[0].photo_reference
+      : null;
     const photoUrl = photoRef
       ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${photoRef}&key=${key}`
       : null;
 
     return {
-      rating: candidate.rating || null,
-      userRatingsTotal: candidate.user_ratings_total || null,
-      priceLevel: candidate.price_level || 1,
+      rating: best.candidate.rating || null,
+      userRatingsTotal: best.candidate.user_ratings_total || null,
+      priceLevel: best.candidate.price_level || 1,
       photoUrl,
-      distanceMeters,
-      nameSimilarity
+      distanceMeters: best.distanceMeters,
+      nameSimilarity: best.nameSimilarity
     };
   } catch (err) {
     console.error('Error enriching place with Google:', err);

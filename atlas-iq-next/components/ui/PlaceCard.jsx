@@ -20,7 +20,7 @@ function CategoryIcon({ category, size = 24 }) {
   }
 }
 
-function PlaceCard({ place, onClick, onQuickSave = () => {} }) {
+function PlaceCard({ place, onClick, onQuickSave = () => { } }) {
   const handleBookmark = (e) => {
     e.stopPropagation(); // don't open detail modal
     onQuickSave?.(place);
@@ -49,7 +49,7 @@ function PlaceCard({ place, onClick, onQuickSave = () => {} }) {
       {/* Dev-only debug metadata overlay */}
       {process.env.NODE_ENV === 'development' && (
         <span className="debug-tag">
-          {place.photoSource} 
+          {place.photoSource}
           {place.matchDistance != null ? ` · d:${Math.round(place.matchDistance)}m` : ''}
           {place.nameSimilarity != null ? ` · s:${place.nameSimilarity.toFixed(2)}` : ''}
         </span>

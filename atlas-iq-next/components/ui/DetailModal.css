@@ -261,7 +261,8 @@
   color: white;
 }
 
-.btn-board-pin:hover, .btn-board-pin.active {
+.btn-board-pin:hover,
+.btn-board-pin.active {
   border-color: var(--color-primary);
   box-shadow: 0 0 12px rgba(20, 184, 166, 0.2);
 }

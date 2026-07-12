@@ -11,6 +11,7 @@ import {
   enrichPlaceWithGoogle,
   enrichPlaceWithFoursquare,
   fetchMapillaryImage,
+  fetchWikimediaCommonsImage,
   getCleanCategory,
   getCleanAddress,
   getDeterministicHash,
@@ -383,7 +384,18 @@ export const getPaginatedSpots = async (query: string, page = 1, pageSize = 40) 
         }
       }
 
-      // Priority 4: Mapillary coordinate image
+      // Priority 4: Wikimedia Commons Search
+      if (!photoUrl) {
+        const commonsPhoto = await fetchWikimediaCommonsImage(place.name);
+        if (commonsPhoto) {
+          photoUrl = commonsPhoto;
+          photoSource = 'wikimedia_search';
+          matchDistance = 0;
+          nameSimilarity = 1.05; // Treat exact text matches on Wiki Commons highly
+        }
+      }
+
+      // Priority 5: Mapillary coordinate image
       if (!photoUrl) {
         const mapillaryPhoto = await fetchMapillaryImage(place.lat, place.lng);
         if (mapillaryPhoto) {

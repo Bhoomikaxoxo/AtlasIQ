@@ -71,7 +71,7 @@ function DetailModal({ place, onClose }) {
         {/* Dev-only debug metadata overlay in modal */}
         {import.meta.env.DEV && (
           <div className="debug-tag modal-debug-tag">
-            source: {place.photoSource} 
+            source: {place.photoSource}
             {place.matchDistance != null ? ` · dist:${Math.round(place.matchDistance)}m` : ''}
             {place.nameSimilarity != null ? ` · sim:${place.nameSimilarity.toFixed(2)}` : ''}
             {place.rating == null ? ' · no Google match' : ''}
@@ -98,7 +98,7 @@ function DetailModal({ place, onClose }) {
                 <span>No rating available</span>
               )}
             </div>
-            
+
             <div className="meta-item">
               <DollarSign size={16} className="dollar-icon" />
               <span>Price Level: <strong>{'$'.repeat(place.priceLevel)}</strong></span>
@@ -112,21 +112,21 @@ function DetailModal({ place, onClose }) {
 
           <div className="modal-actions">
             <div className="board-pin-container">
-              <button 
+              <button
                 className={`btn-action btn-board-pin ${showBoardPicker ? 'active' : ''}`}
                 onClick={() => setShowBoardPicker(!showBoardPicker)}
               >
                 📌 Pin to Board
               </button>
               {showBoardPicker && (
-                <BoardPicker 
-                  place={place} 
-                  onClose={() => setShowBoardPicker(false)} 
+                <BoardPicker
+                  place={place}
+                  onClose={() => setShowBoardPicker(false)}
                 />
               )}
             </div>
 
-            <button 
+            <button
               className={`btn-action btn-map-pin ${pinnedToMap ? 'pinned' : ''}`}
               onClick={handleMapPinToggle}
             >

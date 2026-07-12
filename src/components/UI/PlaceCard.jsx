@@ -48,7 +48,7 @@ function PlaceCard({ place, onClick, onQuickSave }) {
       {/* Dev-only debug metadata overlay */}
       {import.meta.env.DEV && (
         <span className="debug-tag">
-          {place.photoSource} 
+          {place.photoSource}
           {place.matchDistance != null ? ` · d:${Math.round(place.matchDistance)}m` : ''}
           {place.nameSimilarity != null ? ` · s:${place.nameSimilarity.toFixed(2)}` : ''}
         </span>
