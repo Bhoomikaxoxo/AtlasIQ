@@ -198,20 +198,36 @@ export const fetchWikidataImage = async (wikidataId) => {
   }
 };
 
-// Fetch image from Wikimedia Commons using text search
-export const fetchWikimediaCommonsImage = async (name) => {
+// Fetch image from Wikimedia Commons using text search (with city fallback)
+export const fetchWikimediaCommonsImage = async (name, city) => {
   try {
-    const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=filetype:bitmap%20${encodeURIComponent(name)}&gsrlimit=1&gsrnamespace=6&prop=imageinfo&iiprop=url&format=json&origin=*`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = await res.json();
-    const pages = data.query?.pages;
-    if (!pages) return null;
+    // Try first with name + city
+    const query = city ? `${name} ${city}` : name;
+    const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=filetype:bitmap%20${encodeURIComponent(query)}&gsrlimit=1&gsrnamespace=6&prop=imageinfo&iiprop=url&format=json&origin=*`;
+    let res = await fetch(url);
+    if (res.ok) {
+      let data = await res.json();
+      let pages = data.query?.pages;
+      if (pages) {
+        const pageId = Object.keys(pages)[0];
+        const imageInfo = pages[pageId]?.imageinfo?.[0];
+        if (imageInfo?.url) return imageInfo.url;
+      }
+    }
     
-    const pageId = Object.keys(pages)[0];
-    const imageInfo = pages[pageId]?.imageinfo?.[0];
-    if (imageInfo?.url) {
-      return imageInfo.url;
+    // If that fails, try with just the name
+    if (city) {
+      const urlFallback = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=filetype:bitmap%20${encodeURIComponent(name)}&gsrlimit=1&gsrnamespace=6&prop=imageinfo&iiprop=url&format=json&origin=*`;
+      let resFallback = await fetch(urlFallback);
+      if (resFallback.ok) {
+        let dataFallback = await resFallback.json();
+        let pagesFallback = dataFallback.query?.pages;
+        if (pagesFallback) {
+          const pageId = Object.keys(pagesFallback)[0];
+          const imageInfo = pagesFallback[pageId]?.imageinfo?.[0];
+          if (imageInfo?.url) return imageInfo.url;
+        }
+      }
     }
     return null;
   } catch (err) {
@@ -220,25 +236,51 @@ export const fetchWikimediaCommonsImage = async (name) => {
   }
 };
 
-// Mapillary coordinate-only image lookup
+// Mapillary coordinate-only image lookup with progressive radius deltas
 export const fetchMapillaryImage = async (lat, lng) => {
   const token = import.meta.env.VITE_MAPILLARY_ACCESS_TOKEN || '';
   if (!token) return null;
 
+  const deltas = [0.0005, 0.0015, 0.003]; // ~55m, ~165m, ~330m
+  for (const delta of deltas) {
+    try {
+      const bbox = `${lng - delta},${lat - delta},${lng + delta},${lat + delta}`;
+      const url = `https://graph.mapillary.com/images?access_token=${token}&fields=id,thumb_1024_url&bbox=${bbox}&limit=1`;
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const img = data.data && data.data[0];
+      if (img && img.thumb_1024_url) return img.thumb_1024_url;
+    } catch (err) {
+      console.error('Error fetching Mapillary image:', err);
+    }
+  }
+  return null;
+};
+
+// Fetch stock image from Pexels API using search terms
+export const fetchPexelsImage = async (query) => {
+  const key = import.meta.env.VITE_PEXELS_API_KEY || '';
+  if (!key) return null;
+
   try {
-    const delta = 0.0005;
-    const bbox = `${lng - delta},${lat - delta},${lng + delta},${lat + delta}`;
-    const url = `https://graph.mapillary.com/images?access_token=${token}&fields=id,thumb_1024_url&bbox=${bbox}&limit=1`;
-    const res = await fetch(url);
+    const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=5`;
+    const res = await fetch(url, {
+      headers: {
+        'Authorization': key
+      }
+    });
     if (!res.ok) return null;
     const data = await res.json();
-    const img = data.data && data.data[0];
-    if (img && img.thumb_1024_url) {
-      return img.thumb_1024_url;
+    const photos = data.photos || [];
+    if (photos.length > 0) {
+      const hash = getDeterministicHash(query);
+      const index = hash % photos.length;
+      return photos[index].src.large || photos[index].src.medium;
     }
     return null;
   } catch (err) {
-    console.error('Error fetching Mapillary image:', err);
+    console.error(`Error in Pexels search for "${query}":`, err);
     return null;
   }
 };
@@ -676,7 +718,7 @@ export const searchDestination = async (query, page = 1, pageSize = 40) => {
 
     // Priority 4: Wikimedia Commons Search
     if (!photoUrl) {
-      const commonsPhoto = await fetchWikimediaCommonsImage(node.tags.name);
+      const commonsPhoto = await fetchWikimediaCommonsImage(node.tags.name, node.cityName || sourcePlaceName);
       if (commonsPhoto) {
         photoUrl = commonsPhoto;
         photoSource = 'wikimedia_search';
@@ -696,7 +738,19 @@ export const searchDestination = async (query, page = 1, pageSize = 40) => {
       }
     }
 
-    // Priority 5: Generic stock fallback
+    // Priority 5.5: Pexels API (Dynamic contextual stock photos)
+    if (!photoUrl) {
+      const queryTerm = `${category} ${node.cityName || sourcePlaceName || ''}`.trim();
+      const pexelsPhoto = await fetchPexelsImage(queryTerm);
+      if (pexelsPhoto) {
+        photoUrl = pexelsPhoto;
+        photoSource = 'pexels';
+        matchDistance = 0;
+        nameSimilarity = 1.0;
+      }
+    }
+
+    // Priority 6: Generic stock fallback
     if (!photoUrl) {
       const images = CATEGORY_IMAGES[category] || CATEGORY_IMAGES.attraction;
       const imageIndex = (hash + idx) % images.length;
@@ -714,9 +768,11 @@ export const searchDestination = async (query, page = 1, pageSize = 40) => {
 
     let address = getCleanAddress(node.tags, node.cityName || sourcePlaceName);
     if (!googleData) {
-      const revGeo = await reverseGeocode(node.lat, node.lon);
-      if (revGeo) {
-        address = revGeo;
+      if (photoSource === 'generic' || photoSource === 'pexels') {
+        const revGeo = await reverseGeocode(node.lat, node.lon);
+        if (revGeo) {
+          address = revGeo;
+        }
       }
     }
 
@@ -732,7 +788,7 @@ export const searchDestination = async (query, page = 1, pageSize = 40) => {
       priceLevel,
       photoUrl,
       photoSource,
-      photoIsGeneric: photoSource === 'generic',
+      photoIsGeneric: photoSource === 'generic' || photoSource === 'pexels',
       matchDistance,
       nameSimilarity,
       classification,

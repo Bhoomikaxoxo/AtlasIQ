@@ -12,6 +12,7 @@ import {
   enrichPlaceWithFoursquare,
   fetchMapillaryImage,
   fetchWikimediaCommonsImage,
+  fetchPexelsImage,
   getCleanCategory,
   getCleanAddress,
   getDeterministicHash,
@@ -386,7 +387,7 @@ export const getPaginatedSpots = async (query: string, page = 1, pageSize = 40) 
 
       // Priority 4: Wikimedia Commons Search
       if (!photoUrl) {
-        const commonsPhoto = await fetchWikimediaCommonsImage(place.name);
+        const commonsPhoto = await fetchWikimediaCommonsImage(place.name, place.sourcePlace);
         if (commonsPhoto) {
           photoUrl = commonsPhoto;
           photoSource = 'wikimedia_search';
@@ -406,7 +407,19 @@ export const getPaginatedSpots = async (query: string, page = 1, pageSize = 40) 
         }
       }
 
-      // Priority 5: Generic stock fallback
+      // Priority 5.5: Pexels API (Dynamic contextual stock photos)
+      if (!photoUrl) {
+        const queryTerm = `${category} ${place.sourcePlace || ''}`.trim();
+        const pexelsPhoto = await fetchPexelsImage(queryTerm);
+        if (pexelsPhoto) {
+          photoUrl = pexelsPhoto;
+          photoSource = 'pexels';
+          matchDistance = 0;
+          nameSimilarity = 1.0;
+        }
+      }
+
+      // Priority 6: Generic stock fallback
       if (!photoUrl) {
         const images = CATEGORY_IMAGES[category] || CATEGORY_IMAGES.attraction;
         const imageIndex = (hash + idx) % images.length;
@@ -416,7 +429,7 @@ export const getPaginatedSpots = async (query: string, page = 1, pageSize = 40) 
 
       // Reverse geocode if no Google match to enrich the address
       let address = place.address;
-      if (photoSource === 'generic') {
+      if (photoSource === 'generic' || photoSource === 'pexels') {
         const revGeo = await reverseGeocode(place.lat, place.lng);
         if (revGeo) {
           address = revGeo;
@@ -437,7 +450,7 @@ export const getPaginatedSpots = async (query: string, page = 1, pageSize = 40) 
         data: {
           photoUrl: photoUrl || '',
           photoSource,
-          photoIsGeneric: photoSource === 'generic',
+          photoIsGeneric: photoSource === 'generic' || photoSource === 'pexels',
           rating,
           userRatingsTotal,
           priceLevel,
