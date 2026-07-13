@@ -776,7 +776,7 @@ export const searchDestination = async (query, page = 1, pageSize = 40) => {
       priceLevel,
       photoUrl,
       photoSource,
-      photoIsGeneric: photoSource === 'generic' || photoSource === 'pexels',
+      photoIsGeneric: photoSource === 'generic',
       matchDistance,
       nameSimilarity,
       classification,

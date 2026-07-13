@@ -441,7 +441,7 @@ export const getPaginatedSpots = async (query: string, page = 1, pageSize = 40) 
         data: {
           photoUrl: photoUrl || '',
           photoSource,
-          photoIsGeneric: photoSource === 'generic' || photoSource === 'pexels',
+          photoIsGeneric: photoSource === 'generic',
           rating,
           userRatingsTotal,
           priceLevel,
