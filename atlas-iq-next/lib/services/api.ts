@@ -318,8 +318,17 @@ export const fetchWikidataImage = async (wikidataId?: string): Promise<string | 
   }
 };
 
-// Fetch image from Wikimedia Commons using text search (with city fallback)
+// Fetch image from Wikimedia Commons using text search (with city fallback and safety guards)
 export const fetchWikimediaCommonsImage = async (name: string, city?: string): Promise<string | null> => {
+  // Skip Wikimedia search entirely for short/ambiguous names — too high false-positive risk
+  if (name.trim().length < 6) return null;
+
+  const isMatchingTitle = (title: string): boolean => {
+    const nameTokens = name.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+    const titleLower = title.toLowerCase();
+    return nameTokens.some(token => titleLower.includes(token));
+  };
+
   try {
     // Try first with name + city
     const query = city ? `${name} ${city}` : name;
@@ -330,8 +339,11 @@ export const fetchWikimediaCommonsImage = async (name: string, city?: string): P
       let pages = data.query?.pages;
       if (pages) {
         const pageId = Object.keys(pages)[0];
-        const imageInfo = pages[pageId]?.imageinfo?.[0];
-        if (imageInfo?.url) return imageInfo.url;
+        const page = pages[pageId];
+        const imageInfo = page?.imageinfo?.[0];
+        if (imageInfo?.url && isMatchingTitle(page.title || '')) {
+          return imageInfo.url;
+        }
       }
     }
     
@@ -344,8 +356,11 @@ export const fetchWikimediaCommonsImage = async (name: string, city?: string): P
         let pagesFallback = dataFallback.query?.pages;
         if (pagesFallback) {
           const pageId = Object.keys(pagesFallback)[0];
-          const imageInfo = pagesFallback[pageId]?.imageinfo?.[0];
-          if (imageInfo?.url) return imageInfo.url;
+          const page = pagesFallback[pageId];
+          const imageInfo = page?.imageinfo?.[0];
+          if (imageInfo?.url && isMatchingTitle(page.title || '')) {
+            return imageInfo.url;
+          }
         }
       }
     }
