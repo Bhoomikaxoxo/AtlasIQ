@@ -389,7 +389,7 @@ export const getPaginatedSpots = async (query: string, page = 1, pageSize = 40) 
 
       // Priority 4: Wikimedia Commons Search
       if (!photoUrl) {
-        const commonsPhoto = await fetchWikimediaCommonsImage(place.name, place.sourcePlace);
+        const commonsPhoto = await fetchWikimediaCommonsImage(place.lat, place.lng);
         if (commonsPhoto) {
           photoUrl = commonsPhoto;
           photoSource = 'wikimedia_search';

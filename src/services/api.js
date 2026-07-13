@@ -200,57 +200,39 @@ export const fetchWikidataImage = async (wikidataId) => {
   }
 };
 
-// Fetch image from Wikimedia Commons using text search (with city fallback and safety guards)
-export const fetchWikimediaCommonsImage = async (name, city) => {
-  // Skip Wikimedia search entirely for short/ambiguous names — too high false-positive risk
-  if (name.trim().length < 6) return null;
+// Fetch image from Wikimedia Commons using geo search (coordinates-first, no text search false positives)
+export const fetchWikimediaCommonsImage = async (lat, lng) => {
+  // Search for images geotagged near the place's coordinates — much more reliable than text search
+  // Try progressively wider radii: 100m, 500m, 1km
+  const radii = [100, 500, 1000];
 
-  const isMatchingTitle = (title) => {
-    const nameTokens = name.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-    const titleLower = title.toLowerCase();
-    return nameTokens.some(token => titleLower.includes(token));
-  };
-
-  try {
-    // Try first with name + city
-    const query = city ? `${name} ${city}` : name;
-    const url = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=filetype:bitmap%20${encodeURIComponent(query)}&gsrlimit=1&gsrnamespace=6&prop=imageinfo&iiprop=url&format=json&origin=*`;
-    let res = await fetch(url);
-    if (res.ok) {
-      let data = await res.json();
-      let pages = data.query?.pages;
-      if (pages) {
-        const pageId = Object.keys(pages)[0];
-        const page = pages[pageId];
-        const imageInfo = page?.imageinfo?.[0];
-        if (imageInfo?.url && isMatchingTitle(page.title || '')) {
-          return imageInfo.url;
-        }
-      }
-    }
-    
-    // If that fails, try with just the name
-    if (city) {
-      const urlFallback = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=filetype:bitmap%20${encodeURIComponent(name)}&gsrlimit=1&gsrnamespace=6&prop=imageinfo&iiprop=url&format=json&origin=*`;
-      let resFallback = await fetch(urlFallback);
-      if (resFallback.ok) {
-        let dataFallback = await resFallback.json();
-        let pagesFallback = dataFallback.query?.pages;
-        if (pagesFallback) {
-          const pageId = Object.keys(pagesFallback)[0];
-          const page = pagesFallback[pageId];
-          const imageInfo = page?.imageinfo?.[0];
-          if (imageInfo?.url && isMatchingTitle(page.title || '')) {
-            return imageInfo.url;
+  for (const radius of radii) {
+    try {
+      const url = `https://commons.wikimedia.org/w/api.php?action=query&list=geosearch&gscoord=${lat}|${lng}&gsradius=${radius}&gsnamespace=6&gslimit=5&prop=imageinfo&iiprop=url&format=json&origin=*`;
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const results = data.query?.geosearch;
+      if (results && results.length > 0) {
+        // Fetch imageinfo for the best hit
+        const pageIds = results.map(r => r.pageid).join('|');
+        const infoUrl = `https://commons.wikimedia.org/w/api.php?action=query&pageids=${pageIds}&prop=imageinfo&iiprop=url&format=json&origin=*`;
+        const infoRes = await fetch(infoUrl);
+        if (!infoRes.ok) continue;
+        const infoData = await infoRes.json();
+        const pages = infoData.query?.pages;
+        if (pages) {
+          for (const pageId of Object.keys(pages)) {
+            const imageInfo = pages[pageId]?.imageinfo?.[0];
+            if (imageInfo?.url) return imageInfo.url;
           }
         }
       }
+    } catch (err) {
+      console.error(`Error in Wikimedia Commons geo search:`, err);
     }
-    return null;
-  } catch (err) {
-    console.error(`Error in Wikimedia Commons search for "${name}":`, err);
-    return null;
   }
+  return null;
 };
 
 // Mapillary coordinate-only image lookup with progressive radius deltas
@@ -735,7 +717,7 @@ export const searchDestination = async (query, page = 1, pageSize = 40) => {
 
     // Priority 4: Wikimedia Commons Search
     if (!photoUrl) {
-      const commonsPhoto = await fetchWikimediaCommonsImage(node.tags.name, node.cityName || sourcePlaceName);
+      const commonsPhoto = await fetchWikimediaCommonsImage(node.lat, node.lon);
       if (commonsPhoto) {
         photoUrl = commonsPhoto;
         photoSource = 'wikimedia_search';
