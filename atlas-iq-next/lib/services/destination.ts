@@ -401,7 +401,7 @@ export const getPaginatedSpots = async (query: string, page = 1, pageSize = 40) 
       // Priority 5: Pexels API (Dynamic contextual stock photos)
       if (!photoUrl) {
         const queryTerm = `${category} ${place.sourcePlace || ''}`.trim();
-        const pexelsPhoto = await fetchPexelsImage(queryTerm);
+        const pexelsPhoto = await fetchPexelsImage(queryTerm, place.name);
         if (pexelsPhoto) {
           photoUrl = pexelsPhoto;
           photoSource = 'pexels';

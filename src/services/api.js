@@ -258,12 +258,14 @@ export const fetchMapillaryImage = async (lat, lng) => {
 };
 
 // Fetch stock image from Pexels API using search terms
-export const fetchPexelsImage = async (query) => {
+// Fetch stock image from Pexels API using search terms
+// placeName is used as hash seed so different places get different photos even with the same category query
+export const fetchPexelsImage = async (query, placeName) => {
   const key = import.meta.env.VITE_PEXELS_API_KEY || '';
   if (!key) return null;
 
   try {
-    const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=5`;
+    const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=30`;
     const res = await fetch(url, {
       headers: {
         'Authorization': key
@@ -273,7 +275,8 @@ export const fetchPexelsImage = async (query) => {
     const data = await res.json();
     const photos = data.photos || [];
     if (photos.length > 0) {
-      const hash = getDeterministicHash(query);
+      // Hash the place NAME (not the query) so each place picks a unique photo
+      const hash = getDeterministicHash(placeName);
       const index = hash % photos.length;
       return photos[index].src.large || photos[index].src.medium;
     }
@@ -729,7 +732,7 @@ export const searchDestination = async (query, page = 1, pageSize = 40) => {
     // Priority 5: Pexels API (Dynamic contextual stock photos)
     if (!photoUrl) {
       const queryTerm = `${category} ${node.cityName || sourcePlaceName || ''}`.trim();
-      const pexelsPhoto = await fetchPexelsImage(queryTerm);
+      const pexelsPhoto = await fetchPexelsImage(queryTerm, node.tags.name);
       if (pexelsPhoto) {
         photoUrl = pexelsPhoto;
         photoSource = 'pexels';
