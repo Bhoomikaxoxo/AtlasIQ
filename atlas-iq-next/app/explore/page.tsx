@@ -79,7 +79,15 @@ function ExploreContent() {
       if (!response.ok) throw new Error('Search request failed');
       const data = await response.json();
 
-      setSpots(prev => isNewSearch ? data.spots : [...prev, ...data.spots]);
+      setSpots(prev => {
+        const combined = isNewSearch ? data.spots : [...prev, ...data.spots];
+        const seen = new Set<string>();
+        return combined.filter((s: Spot) => {
+          if (!s.id || seen.has(s.id)) return false;
+          seen.add(s.id);
+          return true;
+        });
+      });
       setHasMore(data.hasMore);
 
       const newGoogle = data.spots.filter((s: Spot) => s.photoSource === 'google').length;
@@ -323,9 +331,9 @@ function ExploreContent() {
             ) : (
               <>
                 <div className={`explore-grid ${viewMode === 'list' ? 'explore-grid--list' : ''}`}>
-                  {filteredSpots.map(place => (
+                  {filteredSpots.map((place, idx) => (
                     <PlaceCard
-                      key={place.id}
+                      key={`${place.id}-${idx}`}
                       place={place as any}
                       onClick={setSelectedPlace as any}
                     />

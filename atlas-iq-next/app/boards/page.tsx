@@ -104,9 +104,9 @@ export default function BoardsPage() {
               </div>
             ) : (
               <div className="explore-grid">
-                {places.map(place => (
+                {places.map((place, idx) => (
                   <PlaceCard
-                    key={place.id}
+                    key={`${place.id}-${idx}`}
                     place={place as any}
                     onClick={setSelectedPlace as any}
                   />
