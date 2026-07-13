@@ -398,18 +398,7 @@ export const getPaginatedSpots = async (query: string, page = 1, pageSize = 40) 
         }
       }
 
-      // Priority 5: Mapillary coordinate image (only for suitable outdoor categories)
-      if (!photoUrl && MAPILLARY_SUITABLE_CATEGORIES.has(category)) {
-        const mapillaryPhoto = await fetchMapillaryImage(place.lat, place.lng);
-        if (mapillaryPhoto) {
-          photoUrl = mapillaryPhoto;
-          photoSource = 'mapillary';
-          matchDistance = 0;
-          nameSimilarity = 1.0;
-        }
-      }
-
-      // Priority 5.5: Pexels API (Dynamic contextual stock photos)
+      // Priority 5: Pexels API (Dynamic contextual stock photos)
       if (!photoUrl) {
         const queryTerm = `${category} ${place.sourcePlace || ''}`.trim();
         const pexelsPhoto = await fetchPexelsImage(queryTerm);
